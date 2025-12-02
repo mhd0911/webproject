@@ -1,6 +1,8 @@
 {
   "dependencies": {
     "@reduxjs/toolkit": "^2.10.1",
+    "@types/express": "^5.0.5",
+    "express": "^5.1.0",
     "react-redux": "^9.2.0"
   }
 }
