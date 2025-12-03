@@ -1,458 +1,466 @@
-import { useMemo, useState } from "react";
+// src/pages/Products.tsx
+import React, { useMemo, useState } from "react";
 
-type Product = {
-  id: number;
+type ProductStatus = "active" | "low" | "out" | "hidden";
+
+interface Product {
+  id: string;
   name: string;
   sku: string;
   category: string;
   price: number;
   stock: number;
-  createdAt: string;
-};
+  status: ProductStatus;
+  image: string;
+  soldToday: number;
+  rating: number;
+}
 
-const initialProducts: Product[] = [
+const mockProducts: Product[] = [
   {
-    id: 1,
-    name: "Áo thun basic",
-    sku: "TSHIRT-001",
-    category: "Thời trang",
-    price: 199000,
-    stock: 50,
-    createdAt: "2025-11-20",
+    id: "SP001",
+    name: "Áo thun basic trắng",
+    sku: "AT001",
+    category: "Áo thun",
+    price: 159000,
+    stock: 12,
+    status: "active",
+    image:
+      "https://images.pexels.com/photos/1002638/pexels-photo-1002638.jpeg?auto=compress&cs=tinysrgb&w=800",
+    soldToday: 5,
+    rating: 4.7,
   },
   {
-    id: 2,
-    name: "Giày sneaker trắng",
-    sku: "SNK-101",
-    category: "Giày dép",
-    price: 790000,
-    stock: 20,
-    createdAt: "2025-11-22",
+    id: "SP002",
+    name: "Quần jean xanh slim fit",
+    sku: "QJ023",
+    category: "Quần jean",
+    price: 399000,
+    stock: 3,
+    status: "low",
+    image:
+      "https://images.pexels.com/photos/1032110/pexels-photo-1032110.jpeg?auto=compress&cs=tinysrgb&w=800",
+    soldToday: 2,
+    rating: 4.5,
   },
   {
-    id: 3,
-    name: "Tai nghe Bluetooth",
-    sku: "EAR-501",
-    category: "Phụ kiện",
-    price: 350000,
-    stock: 35,
-    createdAt: "2025-11-25",
+    id: "SP003",
+    name: "Áo khoác hoodie đen",
+    sku: "AK012",
+    category: "Áo khoác",
+    price: 459000,
+    stock: 0,
+    status: "out",
+    image:
+      "https://images.pexels.com/photos/7671166/pexels-photo-7671166.jpeg?auto=compress&cs=tinysrgb&w=800",
+    soldToday: 0,
+    rating: 4.2,
+  },
+  {
+    id: "SP004",
+    name: "Sơ mi kẻ caro",
+    sku: "SM034",
+    category: "Sơ mi",
+    price: 289000,
+    stock: 28,
+    status: "active",
+    image:
+      "https://images.pexels.com/photos/7691088/pexels-photo-7691088.jpeg?auto=compress&cs=tinysrgb&w=800",
+    soldToday: 7,
+    rating: 4.9,
+  },
+  {
+    id: "SP005",
+    name: "Quần short kaki",
+    sku: "QS019",
+    category: "Quần short",
+    price: 219000,
+    stock: 6,
+    status: "low",
+    image:
+      "https://images.pexels.com/photos/7697281/pexels-photo-7697281.jpeg?auto=compress&cs=tinysrgb&w=800",
+    soldToday: 1,
+    rating: 4.3,
+  },
+  {
+    id: "SP006",
+    name: "Áo polo nam",
+    sku: "PL015",
+    category: "Áo polo",
+    price: 249000,
+    stock: 40,
+    status: "hidden",
+    image:
+      "https://images.pexels.com/photos/7691222/pexels-photo-7691222.jpeg?auto=compress&cs=tinysrgb&w=800",
+    soldToday: 0,
+    rating: 4.1,
   },
 ];
 
-const categories = ["Tất cả", "Thời trang", "Giày dép", "Phụ kiện"];
+const formatCurrency = (value: number) =>
+  value.toLocaleString("vi-VN", { style: "currency", currency: "VND" });
+
+const statusLabel: Record<ProductStatus, string> = {
+  active: "Đang bán",
+  low: "Sắp hết hàng",
+  out: "Hết hàng",
+  hidden: "Đang ẩn",
+};
+
+const statusColorClass: Record<ProductStatus, string> = {
+  active: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-200",
+  low: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-200",
+  out: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-200",
+  hidden: "bg-slate-100 text-slate-600 dark:bg-slate-700/60 dark:text-slate-200",
+};
 
 const Products = () => {
-  const [products, setProducts] = useState<Product[]>(initialProducts);
-
-  const [search, setSearch] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("Tất cả");
-
-  const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 5;
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-
-  const [formData, setFormData] = useState({
-    name: "",
-    sku: "",
-    category: "Thời trang",
-    price: "",
-    stock: "",
-  });
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      sku: "",
-      category: "Thời trang",
-      price: "",
-      stock: "",
-    });
-    setEditingProduct(null);
-  };
-
-  const openAddModal = () => {
-    resetForm();
-    setIsModalOpen(true);
-  };
-
-  const openEditModal = (product: Product) => {
-    setEditingProduct(product);
-    setFormData({
-      name: product.name,
-      sku: product.sku,
-      category: product.category,
-      price: product.price.toString(),
-      stock: product.stock.toString(),
-    });
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    resetForm();
-  };
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleSave = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const priceNumber = Number(formData.price);
-    const stockNumber = Number(formData.stock);
-
-    if (!formData.name.trim() || !formData.sku.trim()) return;
-    if (Number.isNaN(priceNumber) || Number.isNaN(stockNumber)) return;
-
-    if (editingProduct) {
-      // Cập nhật sản phẩm
-      setProducts((prev) =>
-        prev.map((p) =>
-          p.id === editingProduct.id
-            ? {
-                ...p,
-                name: formData.name.trim(),
-                sku: formData.sku.trim(),
-                category: formData.category,
-                price: priceNumber,
-                stock: stockNumber,
-              }
-            : p
-        )
-      );
-    } else {
-      // Thêm sản phẩm mới
-      const newProduct: Product = {
-        id: Date.now(),
-        name: formData.name.trim(),
-        sku: formData.sku.trim(),
-        category: formData.category,
-        price: priceNumber,
-        stock: stockNumber,
-        createdAt: new Date().toISOString().slice(0, 10),
-      };
-      setProducts((prev) => [newProduct, ...prev]);
-    }
-
-    closeModal();
-  };
-
-  const handleDelete = (id: number) => {
-    const ok = window.confirm("Bạn có chắc muốn xoá sản phẩm này?");
-    if (!ok) return;
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-  };
-
-  // Lọc + tìm kiếm
-  const filteredProducts = useMemo(() => {
-    let data = [...products];
-
-    if (search.trim()) {
-      const keyword = search.trim().toLowerCase();
-      data = data.filter(
-        (p) =>
-          p.name.toLowerCase().includes(keyword) ||
-          p.sku.toLowerCase().includes(keyword)
-      );
-    }
-
-    if (categoryFilter !== "Tất cả") {
-      data = data.filter((p) => p.category === categoryFilter);
-    }
-
-    return data;
-  }, [products, search, categoryFilter]);
-
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / pageSize));
-
-  const currentPageData = filteredProducts.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
+  const [statusFilter, setStatusFilter] = useState<"all" | ProductStatus>("all");
+  const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [search, setSearch] = useState<string>("");
+  const [sortBy, setSortBy] = useState<"new" | "priceAsc" | "priceDesc" | "stock">(
+    "new"
   );
 
-  const goToPage = (page: number) => {
-    if (page < 1 || page > totalPages) return;
-    setCurrentPage(page);
-  };
+  const categories = useMemo(
+    () => Array.from(new Set(mockProducts.map((p) => p.category))),
+    []
+  );
+
+  const filtered = useMemo(() => {
+    let list = [...mockProducts];
+
+    if (statusFilter !== "all") {
+      list = list.filter((p) => p.status === statusFilter);
+    }
+    if (categoryFilter !== "all") {
+      list = list.filter((p) => p.category === categoryFilter);
+    }
+    if (search.trim()) {
+      const keyword = search.toLowerCase();
+      list = list.filter(
+        (p) =>
+          p.name.toLowerCase().includes(keyword) ||
+          p.sku.toLowerCase().includes(keyword) ||
+          p.id.toLowerCase().includes(keyword)
+      );
+    }
+
+    switch (sortBy) {
+      case "priceAsc":
+        list.sort((a, b) => a.price - b.price);
+        break;
+      case "priceDesc":
+        list.sort((a, b) => b.price - a.price);
+        break;
+      case "stock":
+        list.sort((a, b) => a.stock - b.stock);
+        break;
+      default:
+        // "new" – giả sử theo id (đảo ngược)
+        list.sort((a, b) => (a.id < b.id ? 1 : -1));
+    }
+
+    return list;
+  }, [statusFilter, categoryFilter, search, sortBy]);
+
+  const stats = useMemo(() => {
+    const total = mockProducts.length;
+    const low = mockProducts.filter((p) => p.status === "low").length;
+    const out = mockProducts.filter((p) => p.status === "out").length;
+    const hidden = mockProducts.filter((p) => p.status === "hidden").length;
+    return { total, low, out, hidden };
+  }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 lg:space-y-8">
       {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-50">
-            Sản phẩm
+          <h1 className="text-xl sm:text-2xl font-semibold text-slate-900 dark:text-slate-50 flex items-center gap-2">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-2xl bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-100">
+              📦
+            </span>
+            Quản lý sản phẩm
           </h1>
-          <p className="text-sm text-slate-500 dark:text-slate-400">
-            Quản lý danh mục sản phẩm, tồn kho và giá bán.
+          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
+            Xem nhanh tồn kho, trạng thái và hiệu quả bán hàng của từng sản phẩm.
           </p>
         </div>
 
-        <button
-          onClick={openAddModal}
-          className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-500 active:scale-[0.98] transition"
-        >
-          + Thêm sản phẩm
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs sm:text-sm font-medium text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+          >
+            ⬇️ Xuất danh sách
+          </button>
+          <button
+            type="button"
+            className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-violet-500"
+          >
+            ➕ Thêm sản phẩm
+          </button>
+        </div>
       </div>
 
-      {/* Thanh filter / search */}
-      <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900/60">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-1 flex-col gap-3 sm:flex-row">
-            <div className="relative flex-1">
-              <input
-                type="text"
-                placeholder="Tìm theo tên hoặc mã SKU..."
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none ring-blue-500/0 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-                value={search}
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }}
-              />
+      {/* Stats */}
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                Tổng sản phẩm
+              </p>
+              <p className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+                {stats.total}
+              </p>
             </div>
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 text-violet-700 dark:bg-violet-500/20 dark:text-violet-100">
+              🛒
+            </span>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                Sắp hết hàng
+              </p>
+              <p className="text-xl font-semibold text-amber-600 dark:text-amber-300">
+                {stats.low}
+              </p>
+            </div>
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-amber-700 dark:bg-amber-500/20 dark:text-amber-100">
+              ⚠️
+            </span>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                Hết hàng
+              </p>
+              <p className="text-xl font-semibold text-rose-600 dark:text-rose-300">
+                {stats.out}
+              </p>
+            </div>
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-rose-100 text-rose-700 dark:bg-rose-500/20 dark:text-rose-100">
+              ⛔
+            </span>
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                Đang ẩn
+              </p>
+              <p className="text-xl font-semibold text-slate-900 dark:text-slate-50">
+                {stats.hidden}
+              </p>
+            </div>
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-100">
+              🙈
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={statusFilter}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as "all" | ProductStatus)
+              }
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs sm:text-sm text-slate-700 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+            >
+              <option value="all">Trạng thái: Tất cả</option>
+              <option value="active">Đang bán</option>
+              <option value="low">Sắp hết hàng</option>
+              <option value="out">Hết hàng</option>
+              <option value="hidden">Đang ẩn</option>
+            </select>
 
             <select
-              className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none ring-blue-500/0 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 sm:w-48"
               value={categoryFilter}
-              onChange={(e) => {
-                setCategoryFilter(e.target.value);
-                setCurrentPage(1);
-              }}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs sm:text-sm text-slate-700 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
             >
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              <option value="all">Danh mục: Tất cả</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="text-xs text-slate-500 dark:text-slate-400">
-            Tổng:{" "}
-            <span className="font-semibold text-slate-700 dark:text-slate-200">
-              {filteredProducts.length}
-            </span>{" "}
-            sản phẩm
+          <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+            <div className="relative w-full sm:max-w-xs">
+              <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+                🔍
+              </span>
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 py-2 text-xs sm:text-sm text-slate-700 shadow-sm placeholder:text-slate-400 focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                placeholder="Tìm theo tên, mã SP, SKU..."
+              />
+            </div>
+
+            <select
+              value={sortBy}
+              onChange={(e) =>
+                setSortBy(
+                  e.target.value as "new" | "priceAsc" | "priceDesc" | "stock"
+                )
+              }
+              className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs sm:text-sm text-slate-700 shadow-sm focus:border-violet-500 focus:outline-none focus:ring-1 focus:ring-violet-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+            >
+              <option value="new">Mới nhất</option>
+              <option value="priceAsc">Giá tăng dần</option>
+              <option value="priceDesc">Giá giảm dần</option>
+              <option value="stock">Tồn kho ít → nhiều</option>
+            </select>
           </div>
         </div>
       </div>
 
-      {/* Bảng sản phẩm */}
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900/60">
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-left text-sm">
-            <thead className="bg-slate-50 text-xs uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-              <tr>
-                <th className="px-4 py-3">Tên sản phẩm</th>
-                <th className="px-4 py-3">Mã SKU</th>
-                <th className="px-4 py-3">Danh mục</th>
-                <th className="px-4 py-3 text-right">Giá</th>
-                <th className="px-4 py-3 text-right">Tồn kho</th>
-                <th className="px-4 py-3">Ngày tạo</th>
-                <th className="px-4 py-3 text-right">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-              {currentPageData.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400"
-                  >
-                    Không có sản phẩm nào phù hợp.
-                  </td>
-                </tr>
-              ) : (
-                currentPageData.map((product) => (
-                  <tr
-                    key={product.id}
-                    className="hover:bg-slate-50/70 dark:hover:bg-slate-800/60"
-                  >
-                    <td className="px-4 py-3 text-slate-900 dark:text-slate-50">
-                      <div className="font-medium">{product.name}</div>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                      {product.sku}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300">
-                      {product.category}
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-900 dark:text-slate-50">
-                      {product.price.toLocaleString("vi-VN")}₫
-                    </td>
-                    <td className="px-4 py-3 text-right text-slate-700 dark:text-slate-200">
-                      {product.stock}
-                    </td>
-                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
-                      {product.createdAt}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="inline-flex gap-2">
-                        <button
-                          onClick={() => openEditModal(product)}
-                          className="rounded-md border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800"
-                        >
-                          Sửa
-                        </button>
-                        <button
-                          onClick={() => handleDelete(product.id)}
-                          className="rounded-md bg-red-500 px-3 py-1 text-xs font-medium text-white hover:bg-red-600"
-                        >
-                          Xoá
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+      {/* Product grid */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        {filtered.map((p) => (
+          <article
+            key={p.id}
+            className="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-violet-200 hover:shadow-lg dark:border-slate-700 dark:bg-slate-900 dark:hover:border-violet-500/40"
+          >
+            <div className="relative overflow-hidden">
+              <div className="aspect-[4/3] w-full overflow-hidden bg-slate-100 dark:bg-slate-800">
+                <img
+                  src={p.image}
+                  alt={p.name}
+                  className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                />
+              </div>
+              {p.status === "low" && (
+                <span className="absolute left-3 top-3 rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
+                  Sắp hết
+                </span>
               )}
-            </tbody>
-          </table>
-        </div>
+              {p.status === "out" && (
+                <span className="absolute left-3 top-3 rounded-full bg-rose-500 px-2 py-0.5 text-[11px] font-semibold text-white shadow-sm">
+                  Hết hàng
+                </span>
+              )}
+            </div>
 
-        {/* Phân trang */}
-        <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3 text-xs text-slate-500 dark:border-slate-800 dark:text-slate-400">
-          <div>
-            Trang{" "}
-            <span className="font-semibold text-slate-700 dark:text-slate-100">
-              {currentPage}
-            </span>{" "}
-            / {totalPages}
+            <div className="flex flex-1 flex-col p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div className="space-y-1">
+                  <h3 className="line-clamp-2 text-sm font-semibold text-slate-900 dark:text-slate-50">
+                    {p.name}
+                  </h3>
+                  <div className="flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 dark:bg-slate-800">
+                      Mã: {p.id}
+                    </span>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 dark:bg-slate-800">
+                      SKU: {p.sku}
+                    </span>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 dark:bg-slate-800">
+                      {p.category}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-violet-600 dark:text-violet-300">
+                    {formatCurrency(p.price)}
+                  </p>
+                  <p className="mt-0.5 text-[11px] text-slate-400 dark:text-slate-500">
+                    Đã bán hôm nay:{" "}
+                    <span className="font-medium text-emerald-600 dark:text-emerald-300">
+                      {p.soldToday}
+                    </span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-3 flex items-center justify-between text-xs">
+                <div className="flex flex-col gap-1">
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${statusColorClass[p.status]}`}
+                  >
+                    <span className="text-[10px]">
+                      {p.status === "active"
+                        ? "🟢"
+                        : p.status === "low"
+                        ? "🟠"
+                        : p.status === "out"
+                        ? "🔴"
+                        : "⚪"}
+                    </span>
+                    {statusLabel[p.status]}
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Tồn kho:{" "}
+                    <span
+                      className={
+                        p.stock === 0
+                          ? "font-semibold text-rose-500 dark:text-rose-300"
+                          : p.stock <= 5
+                          ? "font-semibold text-amber-500 dark:text-amber-300"
+                          : "font-semibold text-emerald-600 dark:text-emerald-300"
+                      }
+                    >
+                      {p.stock}
+                    </span>
+                  </span>
+                </div>
+
+                <div className="flex flex-col items-end gap-1">
+                  <span className="text-[11px] text-amber-500 dark:text-amber-300">
+                    ⭐ {p.rating.toFixed(1)}
+                  </span>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      className="rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                    >
+                      Sửa
+                    </button>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-rose-100 bg-rose-50 px-2 py-1 text-[11px] font-medium text-rose-600 hover:bg-rose-100 dark:border-rose-500/40 dark:bg-rose-500/10 dark:text-rose-200"
+                    >
+                      Ẩn / Xóa
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </article>
+        ))}
+
+        {filtered.length === 0 && (
+          <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-12 text-center dark:border-slate-600 dark:bg-slate-900/40">
+            <div className="mb-3 text-4xl">🔎</div>
+            <p className="text-sm font-medium text-slate-700 dark:text-slate-100">
+              Không tìm thấy sản phẩm phù hợp
+            </p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              Hãy thử đổi bộ lọc hoặc từ khoá tìm kiếm.
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="rounded-md border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800"
-            >
-              Trước
-            </button>
-            <button
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="rounded-md border border-slate-200 px-3 py-1 text-xs font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-40 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800"
-            >
-              Sau
-            </button>
-          </div>
-        </div>
+        )}
       </div>
-
-      {/* Modal thêm / sửa */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-900/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl dark:bg-slate-900">
-            <h2 className="mb-4 text-lg font-semibold text-slate-900 dark:text-slate-50">
-              {editingProduct ? "Sửa sản phẩm" : "Thêm sản phẩm mới"}
-            </h2>
-            <form onSubmit={handleSave} className="space-y-4">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
-                  Tên sản phẩm
-                </label>
-                <input
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none ring-blue-500/0 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
-                  Mã SKU
-                </label>
-                <input
-                  name="sku"
-                  value={formData.sku}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none ring-blue-500/0 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
-                  Danh mục
-                </label>
-                <select
-                  name="category"
-                  value={formData.category}
-                  onChange={handleChange}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none ring-blue-500/0 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-                >
-                  {categories
-                    .filter((c) => c !== "Tất cả")
-                    .map((c) => (
-                      <option key={c} value={c}>
-                        {c}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
-                    Giá (₫)
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    name="price"
-                    value={formData.price}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none ring-blue-500/0 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600 dark:text-slate-300">
-                    Tồn kho
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    name="stock"
-                    value={formData.stock}
-                    onChange={handleChange}
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm outline-none ring-blue-500/0 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="mt-2 flex justify-end gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={closeModal}
-                  className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 dark:border-slate-600 dark:text-slate-100 dark:hover:bg-slate-800"
-                >
-                  Huỷ
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
-                >
-                  {editingProduct ? "Lưu thay đổi" : "Thêm mới"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
