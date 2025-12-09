@@ -1,14 +1,30 @@
-import { DataTypes, Model } from 'sequelize';
-import { db } from '../config/db';
-import Customer from './customer.model';
+// backend/src/model/order.model.ts
+import { DataTypes, Model, Optional } from "sequelize";
+import { sequelize } from "../config/db";
+import Customer from "./customer.model";
 
-class Order extends Model {
-  public id!: number;
-  public customerId!: number;
-  public orderDate!: Date;
-  public totalAmount!: number;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+export interface OrderAttributes {
+  id: number;
+  code: string;
+  customerId: number;
+  totalAmount: number;
+  status: string;
+}
+
+export type OrderCreationAttributes = Optional<OrderAttributes, "id">;
+
+class Order
+  extends Model<OrderAttributes, OrderCreationAttributes>
+  implements OrderAttributes
+{
+  declare id: number;
+  declare code: string;
+  declare customerId: number;
+  declare totalAmount: number;
+  declare status: string;
+
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 Order.init(
@@ -18,26 +34,35 @@ Order.init(
       autoIncrement: true,
       primaryKey: true,
     },
+    code: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      unique: true,
+    },
     customerId: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
-      references: { model: Customer, key: 'id' },
-    },
-    orderDate: {
-      type: DataTypes.DATE,
-      allowNull: false,
-      defaultValue: DataTypes.NOW,
     },
     totalAmount: {
-      type: DataTypes.DECIMAL(10, 2),
+      type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
-      defaultValue: 0.0,
+    },
+    status: {
+      type: DataTypes.STRING(50),
+      allowNull: false,
+      defaultValue: "pending",
     },
   },
   {
-    tableName: 'orders',
-    sequelize: db,
+    sequelize,
+    tableName: "orders",
+    modelName: "Order",
+    timestamps: true,
   }
 );
 
-export default Order; 
+// Associations
+Order.belongsTo(Customer, { foreignKey: "customerId", as: "customer" });
+Customer.hasMany(Order, { foreignKey: "customerId", as: "orders" });
+
+export default Order;

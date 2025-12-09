@@ -1,7 +1,8 @@
-// src/App.tsx
-import { Routes, Route, Navigate } from "react-router-dom";
+// App.tsx
+import { Routes, Route } from "react-router-dom";
 import MainLayout from "./Layout/MainLayout";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import Products from "./pages/Products";
@@ -12,14 +13,13 @@ import RequireAuth from "./RequireAuth";
 function App() {
   return (
     <Routes>
-      {/* Trang đăng nhập (ai cũng vào được) */}
-      <Route path="/login" element={<Login />} />
+      <Route path="/" element={<Dashboard />} />
 
-      {/* Các route bên trong RequireAuth -> phải login mới vào được */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+
       <Route element={<RequireAuth />}>
         <Route element={<MainLayout />}>
-          {/* mặc định "/" chuyển về /dashboard */}
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/customers" element={<Customers />} />
           <Route path="/products" element={<Products />} />
@@ -27,11 +27,9 @@ function App() {
           <Route path="/stockin" element={<StockIn />} />
         </Route>
       </Route>
-
-      {/* Nếu nhập link linh tinh -> về login */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }
 
 export default App;
+ 

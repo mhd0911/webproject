@@ -91,7 +91,7 @@ const mockProducts: Product[] = [
     stock: 40,
     status: "hidden",
     image:
-      "https://images.pexels.com/photos/7691222/pexels-photo-7691222.jpeg?auto=compress&cs=tinysrgb&w=800",
+      "https://lapier.vn/wp-content/uploads/2023/04/web-616-scaled.jpg",
     soldToday: 0,
     rating: 4.1,
   },

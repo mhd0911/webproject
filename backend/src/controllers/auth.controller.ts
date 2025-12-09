@@ -1,54 +1,112 @@
-import { Request, Response } from 'express';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { User } from '../model';
+import { Request, Response } from "express";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import User from "../model/user.model";
+import { AuthRequest } from "../middlewares/authJwt";
 
-const SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const SALT_ROUNDS = 10;
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
+const JWT_EXPIRES_IN = "7d";
 
-export const signup = async (req: Request, res: Response) => {
+// Đăng ký
+export const register = async (req: Request, res: Response) => {
   try {
-    const hashedPassword = await bcrypt.hash(req.body.password, SALT_ROUNDS);
+    const { fullName, username, password, dateOfBirth, address } = req.body;
+
+    if (!fullName || !username || !password) {
+      return res.status(400).json({ message: "Thiếu thông tin bắt buộc" });
+    }
+
+    const existing = await User.findOne({ where: { username } });
+    if (existing) {
+      return res.status(409).json({ message: "Username đã tồn tại" });
+    }
+
+    const hash = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      username: req.body.username,
-      email: req.body.email,
-      password: hashedPassword,
-      role: req.body.role || 'Staff',
+      fullName,
+      username,
+      password: hash,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : null,
+      address: address || null,
     });
 
-    res.status(201).send({ message: 'Đăng ký người dùng thành công!', id: user.id });
-  } catch (error: any) {
-    res.status(500).send({ message: error.message || 'Lỗi khi đăng ký.' });
+    const token = jwt.sign({ id: user.id }, JWT_SECRET, {
+      expiresIn: JWT_EXPIRES_IN,
+    });
+
+    res.status(201).json({
+      token,
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        username: user.username,
+        dateOfBirth: user.dateOfBirth,
+        address: user.address,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi server" });
   }
 };
 
-export const signin = async (req: Request, res: Response) => {
+// Đăng nhập
+export const login = async (req: Request, res: Response) => {
   try {
-    const user = await User.findOne({ where: { username: req.body.username } });
+    const { username, password } = req.body;
 
+    const user = await User.findOne({ where: { username } });
     if (!user) {
-      return res.status(404).send({ message: 'Người dùng không tồn tại.' });
+      return res.status(401).json({ message: "Sai username hoặc password" });
     }
 
-    const passwordIsValid = await bcrypt.compare(req.body.password, user.password);
-
-    if (!passwordIsValid) {
-      return res.status(401).send({ message: 'Sai mật khẩu!' });
+    const ok = await bcrypt.compare(password, user.password);
+    if (!ok) {
+      return res.status(401).json({ message: "Sai username hoặc password" });
     }
 
-    const token = jwt.sign({ id: user.id, role: user.role }, SECRET, {
-      expiresIn: 86400, // 24 giờ
+    const token = jwt.sign({ id: user.id }, JWT_SECRET, {
+      expiresIn: JWT_EXPIRES_IN,
     });
 
-    res.status(200).send({
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        fullName: user.fullName,
+        username: user.username,
+        dateOfBirth: user.dateOfBirth,
+        address: user.address,
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi server" });
+  }
+};
+
+// Lấy thông tin user từ token
+export const getMe = async (req: AuthRequest, res: Response) => {
+  try {
+    if (!req.userId) {
+      return res.status(401).json({ message: "Chưa đăng nhập" });
+    }
+
+    const user = await User.findByPk(req.userId);
+    if (!user) {
+      return res.status(404).json({ message: "User không tồn tại" });
+    }
+
+    res.json({
       id: user.id,
+      fullName: user.fullName,
       username: user.username,
-      email: user.email,
-      role: user.role,
-      accessToken: token,
+      dateOfBirth: user.dateOfBirth,
+      address: user.address,
     });
-  } catch (error: any) {
-    res.status(500).send({ message: error.message || 'Lỗi khi đăng nhập.' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Lỗi server" });
   }
 };

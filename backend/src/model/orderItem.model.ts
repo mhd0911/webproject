@@ -1,16 +1,31 @@
-import { DataTypes, Model } from 'sequelize';
-import { db } from '../config/db';
-import Order from './order.model';
-import Product from './product.model';
+// backend/src/model/orderItem.model.ts
+import { DataTypes, Model, Optional } from "sequelize";
+import { sequelize } from "../config/db";
+import Order from "./order.model";
+import Product from "./product.model";
 
-class OrderItem extends Model {
-  public id!: number;
-  public orderId!: number;
-  public productId!: number;
-  public quantity!: number;
-  public priceAtPurchase!: number;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+export interface OrderItemAttributes {
+  id: number;
+  orderId: number;
+  productId: number;
+  quantity: number;
+  price: number;
+}
+
+export type OrderItemCreationAttributes = Optional<OrderItemAttributes, "id">;
+
+class OrderItem
+  extends Model<OrderItemAttributes, OrderItemCreationAttributes>
+  implements OrderItemAttributes
+{
+  declare id: number;
+  declare orderId: number;
+  declare productId: number;
+  declare quantity: number;
+  declare price: number;
+
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 OrderItem.init(
@@ -23,26 +38,33 @@ OrderItem.init(
     orderId: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
-      references: { model: Order, key: 'id' },
     },
     productId: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
-      references: { model: Product, key: 'id' },
     },
     quantity: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
     },
-    priceAtPurchase: {
-      type: DataTypes.DECIMAL(10, 2),
+    price: {
+      type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
     },
   },
   {
-    tableName: 'orderItems',
-    sequelize: db,
+    sequelize,
+    tableName: "order_items",
+    modelName: "OrderItem",
+    timestamps: true,
   }
 );
+
+// Associations
+OrderItem.belongsTo(Order, { foreignKey: "orderId", as: "order" });
+Order.hasMany(OrderItem, { foreignKey: "orderId", as: "items" });
+
+OrderItem.belongsTo(Product, { foreignKey: "productId", as: "product" });
+Product.hasMany(OrderItem, { foreignKey: "productId", as: "orderItems" });
 
 export default OrderItem;

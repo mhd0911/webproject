@@ -1,14 +1,29 @@
-import { DataTypes, Model } from 'sequelize';
-import { db } from '../config/db';
+// backend/src/model/product.model.ts
+import { DataTypes, Model, Optional } from "sequelize";
+import { sequelize } from "../config/db";
 
-class Product extends Model {
-  public id!: number;
-  public name!: string;
-  public price!: number;
-  public stockQuantity!: number;
-  public status!: 'Active' | 'Hidden';
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+export interface ProductAttributes {
+  id: number;
+  name: string;
+  sku: string;
+  price: number;
+  quantity: number;
+}
+
+export type ProductCreationAttributes = Optional<ProductAttributes, "id">;
+
+class Product
+  extends Model<ProductAttributes, ProductCreationAttributes>
+  implements ProductAttributes
+{
+  declare id: number;
+  declare name: string;
+  declare sku: string;
+  declare price: number;
+  declare quantity: number;
+
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 Product.init(
@@ -19,29 +34,30 @@ Product.init(
       primaryKey: true,
     },
     name: {
-      type: new DataTypes.STRING(128),
+      type: DataTypes.STRING(255),
       allowNull: false,
+    },
+    sku: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      unique: true,
     },
     price: {
-      type: DataTypes.DECIMAL(10, 2),
+      type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
-      defaultValue: 0.0,
     },
-    stockQuantity: {
+    quantity: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
       defaultValue: 0,
     },
-    status: {
-      type: new DataTypes.ENUM('Active', 'Hidden'),
-      defaultValue: 'Active',
-      allowNull: false,
-    },
   },
   {
-    tableName: 'products',
-    sequelize: db,
+    sequelize,
+    tableName: "products",
+    modelName: "Product",
+    timestamps: true,
   }
 );
 
-export default Product; 
+export default Product;
