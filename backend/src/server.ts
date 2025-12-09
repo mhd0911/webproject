@@ -1,6 +1,10 @@
+// backend/src/server.ts
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
+
+import sequelize from "./config/db";   // ⬅ NHỚ: import default, KHÔNG có ngoặc nhọn
+import { syncModels } from "./model";  // ./model/index.ts
+
 import authRoutes from "./routes/auth.routes";
 import customerRoutes from "./routes/customer.routes";
 import productRoutes from "./routes/product.routes";
@@ -8,21 +12,12 @@ import orderRoutes from "./routes/order.routes";
 import stockRoutes from "./routes/stock.routes";
 import statsRoutes from "./routes/stats.routes";
 
-dotenv.config();
-
 const app = express();
 
-// Cho phép frontend gọi API
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
-);
-
+app.use(cors());
 app.use(express.json());
 
-// Prefix chung cho API
+// routes
 app.use("/api/auth", authRoutes);
 app.use("/api/customers", customerRoutes);
 app.use("/api/products", productRoutes);
@@ -30,12 +25,25 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/stocks", stockRoutes);
 app.use("/api/stats", statsRoutes);
 
-// Simple health check
-app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
-});
+async function start() {
+  try {
+    // 1. Kết nối DB
+    await sequelize.authenticate();
+    console.log("✅ Kết nối MySQL thành công");
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
-});
+    // 2. Đồng bộ model -> tự tạo bảng nếu chưa có
+    await syncModels();
+    console.log("✅ Đồng bộ model xong");
+
+    // 3. Chạy server
+    const PORT = 5000;
+    app.listen(PORT, () => {
+      console.log(`🚀 Server listening on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error("❌ Lỗi kết nối DB:", err);
+    process.exit(1); // tắt server nếu DB lỗi để FE không gọi hoài 500
+  }
+}
+
+start();

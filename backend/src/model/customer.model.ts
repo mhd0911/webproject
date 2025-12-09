@@ -1,29 +1,12 @@
-// backend/src/model/customer.model.ts
-import { DataTypes, Model, Optional } from "sequelize";
-import { sequelize } from "../config/db";
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../config/db";
 
-export interface CustomerAttributes {
-  id: number;
-  name: string;
-  phone: string;
-  email: string | null;
-  address: string | null;
-}
-
-export type CustomerCreationAttributes = Optional<CustomerAttributes, "id">;
-
-class Customer
-  extends Model<CustomerAttributes, CustomerCreationAttributes>
-  implements CustomerAttributes
-{
-  declare id: number;
-  declare name: string;
-  declare phone: string;
-  declare email: string | null;
-  declare address: string | null;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
+export default class Customer extends Model {
+  public id!: number;
+  public name!: string;
+  public phone!: string;
+  public email!: string | null;
+  public address!: string | null;
 }
 
 Customer.init(
@@ -34,28 +17,25 @@ Customer.init(
       primaryKey: true,
     },
     name: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     phone: {
-      type: DataTypes.STRING(20),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     email: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING,
       allowNull: true,
     },
     address: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING,
       allowNull: true,
     },
   },
   {
     sequelize,
     tableName: "customers",
-    modelName: "Customer",
     timestamps: true,
   }
 );
-
-export default Customer;
