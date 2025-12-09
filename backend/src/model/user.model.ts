@@ -1,31 +1,14 @@
 // backend/src/model/user.model.ts
-import { DataTypes, Model, Optional } from "sequelize";
-import { sequelize } from "../config/db";
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../config/db";
 
-export interface UserAttributes {
-  id: number;
-  fullName: string;
-  username: string;
-  password: string;
-  birthday: Date | null;
-  address: string | null;
-}
-
-export type UserCreationAttributes = Optional<UserAttributes, "id">;
-
-class User
-  extends Model<UserAttributes, UserCreationAttributes>
-  implements UserAttributes
-{
-  declare id: number;
-  declare fullName: string;
-  declare username: string;
-  declare password: string;
-  declare birthday: Date | null;
-  declare address: string | null;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
+export default class User extends Model {
+  public id!: number;
+  public fullName!: string;
+  public username!: string;
+  public password!: string;
+  public dateOfBirth!: Date;
+  public address!: string;
 }
 
 User.init(
@@ -36,33 +19,30 @@ User.init(
       primaryKey: true,
     },
     fullName: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING,
       allowNull: false,
     },
     username: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.STRING,
       allowNull: false,
       unique: true,
     },
     password: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING,
       allowNull: false,
     },
-    birthday: {
+    dateOfBirth: {
       type: DataTypes.DATEONLY,
-      allowNull: true,
+      allowNull: false,
     },
     address: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING,
       allowNull: true,
     },
   },
   {
-    sequelize, // ⭐ QUAN TRỌNG
+    sequelize,
     tableName: "users",
-    modelName: "User",
     timestamps: true,
   }
 );
-
-export default User;

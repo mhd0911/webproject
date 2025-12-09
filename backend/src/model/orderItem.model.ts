@@ -1,31 +1,13 @@
 // backend/src/model/orderItem.model.ts
-import { DataTypes, Model, Optional } from "sequelize";
-import { sequelize } from "../config/db";
-import Order from "./order.model";
-import Product from "./product.model";
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../config/db";
 
-export interface OrderItemAttributes {
-  id: number;
-  orderId: number;
-  productId: number;
-  quantity: number;
-  price: number;
-}
-
-export type OrderItemCreationAttributes = Optional<OrderItemAttributes, "id">;
-
-class OrderItem
-  extends Model<OrderItemAttributes, OrderItemCreationAttributes>
-  implements OrderItemAttributes
-{
-  declare id: number;
-  declare orderId: number;
-  declare productId: number;
-  declare quantity: number;
-  declare price: number;
-
-  declare readonly createdAt: Date;
-  declare readonly updatedAt: Date;
+export default class OrderItem extends Model {
+  public id!: number;
+  public orderId!: number;
+  public productId!: number;
+  public quantity!: number;
+  public price!: number;
 }
 
 OrderItem.init(
@@ -55,16 +37,5 @@ OrderItem.init(
   {
     sequelize,
     tableName: "order_items",
-    modelName: "OrderItem",
-    timestamps: true,
   }
 );
-
-// Associations
-OrderItem.belongsTo(Order, { foreignKey: "orderId", as: "order" });
-Order.hasMany(OrderItem, { foreignKey: "orderId", as: "items" });
-
-OrderItem.belongsTo(Product, { foreignKey: "productId", as: "product" });
-Product.hasMany(OrderItem, { foreignKey: "productId", as: "orderItems" });
-
-export default OrderItem;
