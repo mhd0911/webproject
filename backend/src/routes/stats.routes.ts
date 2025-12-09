@@ -1,12 +1,30 @@
-import { Router } from 'express';
-import * as statsController from '../controllers/stats.controller';
-import authJwt from '../middlewares/authJwt';
+// backend/src/routes/stats.routes.ts
+import { Router } from "express";
+import { verifyToken } from "../middlewares/authJwt";
+import Order from "../model/order.model";
+import Customer from "../model/customer.model";
+import Product from "../model/product.model";
 
 const router = Router();
 
-router.use(authJwt.verifyToken, authJwt.isStaff);
+// Thống kê tổng quan
+router.get("/overview", verifyToken, async (req, res) => {
+  try {
+    const [orderCount, customerCount, productCount] = await Promise.all([
+      Order.count(),
+      Customer.count(),
+      Product.count(),
+    ]);
 
-router.get('/inventory', statsController.getInventoryStatus);
-router.get('/customer-history/:customerId', statsController.getCustomerHistory);
+    res.json({
+      orders: orderCount,
+      customers: customerCount,
+      products: productCount,
+    });
+  } catch (error) {
+    console.error("Stats overview error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 export default router;

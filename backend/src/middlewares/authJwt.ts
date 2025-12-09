@@ -1,49 +1,43 @@
-import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
-interface AuthenticatedRequest extends Request {
-  userId?: number;
-  role?: 'Admin' | 'Staff';
+// backend/src/middlewares/authJwt.ts
+import { Request, Response, NextFunction } from "express";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || "secret123";
+
+export interface JwtPayload {
+  id: number;
+  username: string;
 }
-const SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-export const verifyToken = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  let token = req.headers['x-access-token'] as string | undefined;
+/**
+ * Middleware kiểm tra token JWT trong header Authorization: Bearer <token>
+ */
+export function verifyToken(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const authHeader = req.headers["authorization"];
 
-  if (!token) {
-    return res.status(403).send({ message: 'Không tìm thấy Token xác thực!' });
+  if (!authHeader) {
+    return res.status(401).json({ message: "No token provided" });
   }
 
-  jwt.verify(token, SECRET, (err, decoded) => {
-    if (err) {
-      return res.status(401).send({ message: 'Không được phép! Token không hợp lệ hoặc đã hết hạn.' });
-    }
-    const user = decoded as { id: number; role: 'Admin' | 'Staff' };
-    req.userId = user.id;
-    req.role = user.role;
-    next();
-  });
-};
+  const [scheme, token] = authHeader.split(" ");
 
-export const isAdmin = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  if (req.role === 'Admin') {
-    next();
-    return;
+  if (scheme !== "Bearer" || !token) {
+    return res.status(401).json({ message: "Invalid token format" });
   }
-  res.status(403).send({ message: 'Yêu cầu quyền Admin!' });
-};
 
-export const isStaff = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  if (req.role === 'Admin' || req.role === 'Staff') {
-    next();
-    return;
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET) as JwtPayload;
+
+    // Lưu thông tin user vào req nếu cần dùng sau này
+    (req as any).userId = decoded.id;
+    (req as any).username = decoded.username;
+
+    return next();
+  } catch (err) {
+    return res.status(401).json({ message: "Unauthorized" });
   }
-  res.status(403).send({ message: 'Yêu cầu quyền Staff (hoặc Admin)!' });
-};
-
-const authJwt = {
-  verifyToken,
-  isAdmin,
-  isStaff,
-};
-
-export default authJwt;
+}

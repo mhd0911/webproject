@@ -1,12 +1,25 @@
-import { DataTypes, Model } from 'sequelize';
-import { db } from '../config/db';
+// backend/src/model/stockEntry.model.ts
+import { DataTypes, Model, Optional } from "sequelize";
+import { sequelize } from "../config/db";
 
-class StockEntry extends Model {
-  public id!: number;
-  public entryDate!: Date;
-  public supplier!: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+export interface StockEntryAttributes {
+  id: number;
+  code: string;
+  note: string | null;
+}
+
+export type StockEntryCreationAttributes = Optional<StockEntryAttributes, "id">;
+
+class StockEntry
+  extends Model<StockEntryAttributes, StockEntryCreationAttributes>
+  implements StockEntryAttributes
+{
+  declare id: number;
+  declare code: string;
+  declare note: string | null;
+
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 StockEntry.init(
@@ -16,20 +29,22 @@ StockEntry.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    entryDate: {
-      type: DataTypes.DATE,
+    code: {
+      type: DataTypes.STRING(50),
       allowNull: false,
-      defaultValue: DataTypes.NOW,
+      unique: true,
     },
-    supplier: {
-      type: new DataTypes.STRING(255),
-      allowNull: false,
+    note: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
     },
   },
   {
-    tableName: 'stockEntries',
-    sequelize: db,
+    sequelize,
+    tableName: "stock_entries",
+    modelName: "StockEntry",
+    timestamps: true,
   }
 );
 
-export default StockEntry; 
+export default StockEntry;

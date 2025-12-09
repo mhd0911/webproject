@@ -1,15 +1,34 @@
-import { DataTypes, Model } from 'sequelize';
-import { db } from '../config/db';
-import StockEntry from './stockEntry.model';
-import Product from './product.model';
+// backend/src/model/stockEntryItem.model.ts
+import { DataTypes, Model, Optional } from "sequelize";
+import { sequelize } from "../config/db";
+import StockEntry from "./stockEntry.model";
+import Product from "./product.model";
 
-class StockEntryItem extends Model {
-  public id!: number;
-  public stockEntryId!: number;
-  public productId!: number;
-  public quantityAdded!: number;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+export interface StockEntryItemAttributes {
+  id: number;
+  stockEntryId: number;
+  productId: number;
+  quantity: number;
+  costPrice: number;
+}
+
+export type StockEntryItemCreationAttributes = Optional<
+  StockEntryItemAttributes,
+  "id"
+>;
+
+class StockEntryItem
+  extends Model<StockEntryItemAttributes, StockEntryItemCreationAttributes>
+  implements StockEntryItemAttributes
+{
+  declare id: number;
+  declare stockEntryId: number;
+  declare productId: number;
+  declare quantity: number;
+  declare costPrice: number;
+
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 StockEntryItem.init(
@@ -22,22 +41,42 @@ StockEntryItem.init(
     stockEntryId: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
-      references: { model: StockEntry, key: 'id' },
     },
     productId: {
       type: DataTypes.INTEGER.UNSIGNED,
       allowNull: false,
-      references: { model: Product, key: 'id' },
     },
-    quantityAdded: {
+    quantity: {
       type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: false,
+    },
+    costPrice: {
+      type: DataTypes.DECIMAL(15, 2),
       allowNull: false,
     },
   },
   {
-    tableName: 'stockEntryItems',
-    sequelize: db,
+    sequelize,
+    tableName: "stock_entry_items",
+    modelName: "StockEntryItem",
+    timestamps: true,
   }
 );
 
-export default StockEntryItem; 
+// Associations
+StockEntryItem.belongsTo(StockEntry, {
+  foreignKey: "stockEntryId",
+  as: "stockEntry",
+});
+StockEntry.hasMany(StockEntryItem, {
+  foreignKey: "stockEntryId",
+  as: "items",
+});
+
+StockEntryItem.belongsTo(Product, { foreignKey: "productId", as: "product" });
+Product.hasMany(StockEntryItem, {
+  foreignKey: "productId",
+  as: "stockItems",
+});
+
+export default StockEntryItem;

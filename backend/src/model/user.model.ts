@@ -1,14 +1,31 @@
-import { DataTypes, Model } from 'sequelize';
-import { db } from '../config/db';
+// backend/src/model/user.model.ts
+import { DataTypes, Model, Optional } from "sequelize";
+import { sequelize } from "../config/db";
 
-class User extends Model {
-  public id!: number;
-  public username!: string;
-  public email!: string;
-  public password!: string;
-  public role!: 'Admin' | 'Staff';
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+export interface UserAttributes {
+  id: number;
+  fullName: string;
+  username: string;
+  password: string;
+  birthday: Date | null;
+  address: string | null;
+}
+
+export type UserCreationAttributes = Optional<UserAttributes, "id">;
+
+class User
+  extends Model<UserAttributes, UserCreationAttributes>
+  implements UserAttributes
+{
+  declare id: number;
+  declare fullName: string;
+  declare username: string;
+  declare password: string;
+  declare birthday: Date | null;
+  declare address: string | null;
+
+  declare readonly createdAt: Date;
+  declare readonly updatedAt: Date;
 }
 
 User.init(
@@ -18,30 +35,34 @@ User.init(
       autoIncrement: true,
       primaryKey: true,
     },
-    username: {
-      type: new DataTypes.STRING(128),
+    fullName: {
+      type: DataTypes.STRING(255),
       allowNull: false,
-      unique: true,
     },
-    email: {
-      type: new DataTypes.STRING(128),
+    username: {
+      type: DataTypes.STRING(100),
       allowNull: false,
       unique: true,
     },
     password: {
-      type: new DataTypes.STRING(128),
+      type: DataTypes.STRING(255),
       allowNull: false,
     },
-    role: {
-      type: new DataTypes.ENUM('Admin', 'Staff'),
-      defaultValue: 'Staff',
-      allowNull: false,
+    birthday: {
+      type: DataTypes.DATEONLY,
+      allowNull: true,
+    },
+    address: {
+      type: DataTypes.STRING(255),
+      allowNull: true,
     },
   },
   {
-    tableName: 'users',
-    sequelize: db,
+    sequelize, // ⭐ QUAN TRỌNG
+    tableName: "users",
+    modelName: "User",
+    timestamps: true,
   }
 );
 
-export default User; 
+export default User;
