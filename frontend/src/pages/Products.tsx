@@ -26,7 +26,7 @@ const mockProducts: Product[] = [
     stock: 12,
     status: "active",
     image:
-      "https://images.pexels.com/photos/1002638/pexels-photo-1002638.jpeg?auto=compress&cs=tinysrgb&w=800",
+      "https://cdn.hstatic.net/products/200000887901/img_2391_c24bab89ad6849268efad22e35292e94.jpg",
     soldToday: 5,
     rating: 4.7,
   },
@@ -39,7 +39,7 @@ const mockProducts: Product[] = [
     stock: 3,
     status: "low",
     image:
-      "https://images.pexels.com/photos/1032110/pexels-photo-1032110.jpeg?auto=compress&cs=tinysrgb&w=800",
+      "https://4men.com.vn/images/thumbs/2019/08/quan-jean-slimfit-xanh-bien-qj1653-14633-slide-products-5d64ff79d9e5f.JPG",
     soldToday: 2,
     rating: 4.5,
   },
@@ -52,7 +52,7 @@ const mockProducts: Product[] = [
     stock: 0,
     status: "out",
     image:
-      "https://images.pexels.com/photos/7671166/pexels-photo-7671166.jpeg?auto=compress&cs=tinysrgb&w=800",
+      "https://saigonsneaker.com/wp-content/uploads/2021/03/Ao-khoac-hoodie-flexible-toi-gian-mau-den.jpg",
     soldToday: 0,
     rating: 4.2,
   },
@@ -65,7 +65,7 @@ const mockProducts: Product[] = [
     stock: 28,
     status: "active",
     image:
-      "https://images.pexels.com/photos/7691088/pexels-photo-7691088.jpeg?auto=compress&cs=tinysrgb&w=800",
+      "https://cdn0199.cdn4s.com/media/z4849942261122_f6abef1678890de77b5af17e0542ae0d.jpg",
     soldToday: 7,
     rating: 4.9,
   },
@@ -78,7 +78,7 @@ const mockProducts: Product[] = [
     stock: 6,
     status: "low",
     image:
-      "https://images.pexels.com/photos/7697281/pexels-photo-7697281.jpeg?auto=compress&cs=tinysrgb&w=800",
+      "https://vn-test-11.slatic.net/shop/c04ff374a04ed35e106aedaa31f94d69.png",
     soldToday: 1,
     rating: 4.3,
   },
